@@ -2,6 +2,61 @@
 
 Bundler's changelog before 4.0.0, when it was versioned separately from RubyGems, is in [doc/CHANGELOG-bundler-2.x.md](https://github.com/ruby/rubygems/blob/master/doc/CHANGELOG-bundler-2.x.md).
 
+## 4.0.22 / 2026-09-30
+
+### RubyGems
+
+#### Enhancements:
+
+* Add --source option to gem exec command. Pull request [#9765](https://github.com/ruby/rubygems/pull/9765) by Akshay Birajdar
+* Keep credentials on redirects only within the same origin. Pull request [#9909](https://github.com/ruby/rubygems/pull/9909) by Hiroshi SHIBATA
+* Validate the version field in Gem::Installer#verify_spec. Pull request [#9890](https://github.com/ruby/rubygems/pull/9890) by Hiroshi SHIBATA
+* Installs bundler 4.0.22 as a default gem.
+
+#### Bug fixes:
+
+* Remove the build_info file on uninstall and stop gem build from logging unknown extensions. Pull request [#9894](https://github.com/ruby/rubygems/pull/9894) by Hiroshi SHIBATA
+
+### Bundler
+
+#### Enhancements:
+
+* Report the effective platform in `bundle platform`. Pull request [#9898](https://github.com/ruby/rubygems/pull/9898) by Islam Elsayed
+* Keep credentials on redirects only within the same origin. Pull request [#9909](https://github.com/ruby/rubygems/pull/9909) by Hiroshi SHIBATA
+* Update Magnus version in Rust extension gem template. Pull request [#9904](https://github.com/ruby/rubygems/pull/9904) by Mat Sadler and Hiroshi SHIBATA
+
+#### Bug fixes:
+
+* Stop `Bundler.bin_path` creating the directory it reports. Pull request [#9887](https://github.com/ruby/rubygems/pull/9887) by Islam Elsayed and Hiroshi SHIBATA
+* Look up `bundler-<command>` executables only in PATH. Pull request [#9874](https://github.com/ruby/rubygems/pull/9874) by Hiroshi SHIBATA
+
+#### Documentation:
+
+* Describe `--major` as preferring the latest major version. Pull request [#9891](https://github.com/ruby/rubygems/pull/9891) by Hiroshi SHIBATA
+
+## 4.0.21 / 2026-09-16
+
+### RubyGems
+
+#### Enhancements:
+
+* Stop vendoring resolv for two regexps. Pull request [#9877](https://github.com/ruby/rubygems/pull/9877) by Hiroshi SHIBATA
+* Normalize absolute symlink targets during gem extraction. Pull request [#9860](https://github.com/ruby/rubygems/pull/9860) by Hiroshi SHIBATA
+* Installs bundler 4.0.21 as a default gem.
+
+### Bundler
+
+#### Enhancements:
+
+* Don't update bundler to a prerelease unless asked for one. Pull request [#9869](https://github.com/ruby/rubygems/pull/9869) by Hiroshi SHIBATA
+* Reject Bundler redirects that downgrade https to http. Pull request [#9859](https://github.com/ruby/rubygems/pull/9859) by Hiroshi SHIBATA
+
+#### Bug fixes:
+
+* Support `safe.bareRepository=explicit` in git sources. Pull request [#9876](https://github.com/ruby/rubygems/pull/9876) by Hiroshi SHIBATA
+* Stop resolving locally for empty CHECKSUMS entries. Pull request [#9862](https://github.com/ruby/rubygems/pull/9862) by Hiroshi SHIBATA
+* Expand the git source gemspec path before the chdir. Pull request [#9845](https://github.com/ruby/rubygems/pull/9845) by Hiroshi SHIBATA
+
 ## 4.1.0.beta1 / 2026-09-09
 
 ### RubyGems

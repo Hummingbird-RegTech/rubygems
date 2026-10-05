@@ -22,6 +22,14 @@ class Release
   # that budget is rejected rather than answered partially.
   COMMIT_AUTHOR_BATCH_SIZE = 100
 
+  # Octokit guesses an asset's content type through the mime-types gem, which
+  # the release bundle does not carry, so each type is spelled out here.
+  RELEASE_ASSETS = {
+    "rubygems-%s.tgz" => "application/gzip",
+    "rubygems-%s.zip" => "application/zip",
+    "rubygems-update-%s.gem" => "application/octet-stream",
+  }.freeze
+
   COMMIT_AUTHORS_QUERY = <<~GRAPHQL
     query($ids: [ID!]!) {
       nodes(ids: $ids) {
@@ -364,7 +372,9 @@ class Release
     system("git", "commit", "-am", changelog_commit_message, exception: true)
 
     @bundler.bump_versions!
-    system("bin/rake", "version:update_locked_bundler", exception: true)
+    # This regenerates lockfiles that ship, so it has to run against the release
+    # branch's own RubyGems rather than whatever `RGV` this shell selected.
+    system({ "RGV" => nil }, "bin/rake", "version:update_locked_bundler", exception: true)
     system("git", "commit", "-am", "Bump Bundler version to #{@bundler.version}", exception: true)
 
     @rubygems.bump_versions!
@@ -395,7 +405,11 @@ class Release
     }
     options[:target_commitish] = @stable_branch unless @prerelease
 
-    gh_client.create_release "ruby/rubygems", tag, **options
+    release = gh_client.create_release "ruby/rubygems", tag, **options
+
+    RELEASE_ASSETS.each do |pattern, content_type|
+      gh_client.upload_asset(release.url, "pkg/#{format(pattern, @rubygems.version)}", content_type: content_type)
+    end
   end
 
   private
@@ -442,7 +456,7 @@ class Release
       ids = batch.flat_map {|pull| ["-F", "ids[]=#{pull.node_id}"] }
 
       json = IO.popen(["gh", "api", "graphql", "-f", "query=#{COMMIT_AUTHORS_QUERY}", *ids], &:read)
-      raise "Failed to list the commits of #{batch.map(&:number).join(", ")}" unless $?.success?
+      raise "Failed to list the commits of #{batch.map(&:number).join(", ")}" unless Process.last_status.success?
 
       credit_commit_authors(batch, JSON.parse(json).dig("data", "nodes"))
     end
@@ -501,7 +515,7 @@ class Release
 
   def pull_requests_merged_into(base, from, to)
     commits = git_quietly("rev-list", "#{from}..#{to}")
-    raise "Failed to list the commits in #{from}..#{to}" unless $?.success?
+    raise "Failed to list the commits in #{from}..#{to}" unless Process.last_status.success?
 
     reachable = Set.new(commits.split("\n"))
 
@@ -511,12 +525,12 @@ class Release
   # The date bound is deliberately loose. It bounds the query, not the result.
   def merged_pull_requests(base, since_ref)
     committed_at = git_quietly("log", "-1", "--format=%cI", since_ref).strip
-    raise "Failed to resolve #{since_ref}" unless $?.success?
+    raise "Failed to resolve #{since_ref}" unless Process.last_status.success?
 
     since = (Time.iso8601(committed_at) - 86_400).utc.strftime("%Y-%m-%d")
 
     json = `gh pr list --repo ruby/rubygems --state merged --base #{base} --search 'merged:>=#{since}' --limit #{MERGED_PULL_REQUEST_LIMIT} --json number,id,title,labels,mergeCommit,mergedAt,author,url`
-    raise "Failed to list pull requests merged into #{base} since #{since}" unless $?.success?
+    raise "Failed to list pull requests merged into #{base} since #{since}" unless Process.last_status.success?
 
     pull_requests_from(json, "#{base} since #{since}")
   end
